@@ -1,2 +1,11 @@
-console.log("I am executed immediatly");
-module.exports = "I am the export for the router file";
+const express = require("express");
+const router = express.Router();
+const userController = require("./controllers/userController.js");
+
+router.get("/", userController.home);
+router.post("/register", userController.register);
+
+
+
+
+module.exports = router;
