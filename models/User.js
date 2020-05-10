@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs")
 const usersCollection = require('../db').db().collection("users")
-const validator = require("validator")
+const validator = require("validator");
+const md5 = require("md5");
 
 let User = function(data) {
   this.data = data
@@ -42,7 +43,7 @@ User.prototype.validate = function() {
       let emailExists = await usersCollection.findOne({email: this.data.email})
       if (emailExists) {this.errors.push("That email is already being used.")}
     }
-    resolve()
+    resolve();
   })
 }
 
@@ -51,12 +52,14 @@ User.prototype.login = function() {
     this.cleanUp()
     usersCollection.findOne({username: this.data.username}).then((attemptedUser) => {
       if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
-        resolve("Congrats!")
+        this.data = attemptedUser;
+        this.getAvatar();
+        resolve("Congrats!");
       } else {
-        reject("Invalid username / password.")
+        reject("Invalid username / password.");
       }
     }).catch(function() {
-      reject("Please try again later.")
+      reject("Please try again later.");
     })
   })
 }
@@ -64,21 +67,26 @@ User.prototype.login = function() {
 User.prototype.register = function() {
   return new Promise(async (resolve, reject) => {
     // Step #1: Validate user data
-    this.cleanUp()
-    await this.validate()
+    this.cleanUp();
+    await this.validate();
   
     // Step #2: Only if there are no validation errors 
     // then save the user data into a database
     if (!this.errors.length) {
       // hash user password
-      let salt = bcrypt.genSaltSync(10)
-      this.data.password = bcrypt.hashSync(this.data.password, salt)
-      await usersCollection.insertOne(this.data)
-      resolve()
+      let salt = bcrypt.genSaltSync(10);
+      this.data.password = bcrypt.hashSync(this.data.password, salt);
+      await usersCollection.insertOne(this.data);
+      this.getAvatar();
+      resolve();
     } else {
-      reject(this.errors)
+      reject(this.errors);
     }
   })
+}
+
+User.prototype.getAvatar = function() {
+  this.avatar = `https://s.gravatar.com/avatar/${md5(this.data.email)}/?s=128`;
 }
 
 module.exports = User
