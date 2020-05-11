@@ -4,7 +4,7 @@ exports.viewCreateScreen = function (req,res) {
   res.render("create-post.ejs");
 }
 
-exports.create = function(req, res) {
+exports.create = function (req, res) {
   let post = new Post(req.body, req.session.user._id);
   post.create().then(function () {
     res.send("New post created.");
@@ -13,10 +13,19 @@ exports.create = function(req, res) {
   })
 }
 
-exports.viewSingle = async function (req,res) {
+exports.viewSingle = async function (req, res) {
+  try {
+    let post = await Post.findSingleById(req.params.id, req.visitorId);
+    res.render("single-post-screen.ejs", {post: post});
+  } catch (error) {
+    res.render("404.ejs");
+  }
+}
+
+exports.viewEditScreen = async function (req, res) {
   try {
     let post = await Post.findSingleById(req.params.id);
-    res.render("single-post-screen.ejs", {post: post});
+    res.render("edit-post.ejs", {post: post});
   } catch (error) {
     res.render("404.ejs");
   }
