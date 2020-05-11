@@ -1,14 +1,12 @@
 const bcrypt = require("bcryptjs")
 const usersCollection = require('../db').db().collection("users")
-const validator = require("validator");
-const md5 = require("md5");
+const validator = require("validator")
+const md5 = require('md5')
 
 let User = function(data, getAvatar) {
   this.data = data
   this.errors = []
-  if (getAvatar == undefined) {
-    getAvatar = false;
-  }
+  if (getAvatar == undefined) {getAvatar = false}
   if (getAvatar) {this.getAvatar()}
 }
 
@@ -47,7 +45,7 @@ User.prototype.validate = function() {
       let emailExists = await usersCollection.findOne({email: this.data.email})
       if (emailExists) {this.errors.push("That email is already being used.")}
     }
-    resolve();
+    resolve()
   })
 }
 
@@ -56,14 +54,14 @@ User.prototype.login = function() {
     this.cleanUp()
     usersCollection.findOne({username: this.data.username}).then((attemptedUser) => {
       if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
-        this.data = attemptedUser;
-        this.getAvatar();
-        resolve("Congrats!");
+        this.data = attemptedUser
+        this.getAvatar()
+        resolve("Congrats!")
       } else {
-        reject("Invalid username / password.");
+        reject("Invalid username / password.")
       }
     }).catch(function() {
-      reject("Please try again later.");
+      reject("Please try again later.")
     })
   })
 }
@@ -71,48 +69,48 @@ User.prototype.login = function() {
 User.prototype.register = function() {
   return new Promise(async (resolve, reject) => {
     // Step #1: Validate user data
-    this.cleanUp();
-    await this.validate();
+    this.cleanUp()
+    await this.validate()
   
     // Step #2: Only if there are no validation errors 
     // then save the user data into a database
     if (!this.errors.length) {
       // hash user password
-      let salt = bcrypt.genSaltSync(10);
-      this.data.password = bcrypt.hashSync(this.data.password, salt);
-      await usersCollection.insertOne(this.data);
-      this.getAvatar();
-      resolve();
+      let salt = bcrypt.genSaltSync(10)
+      this.data.password = bcrypt.hashSync(this.data.password, salt)
+      await usersCollection.insertOne(this.data)
+      this.getAvatar()
+      resolve()
     } else {
-      reject(this.errors);
+      reject(this.errors)
     }
   })
 }
 
 User.prototype.getAvatar = function() {
-  this.avatar = `https://s.gravatar.com/avatar/${md5(this.data.email)}/?s=128`;
+  this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`
 }
 
 User.findByUsername = function(username) {
   return new Promise(function(resolve, reject) {
     if (typeof(username) != "string") {
-      reject();
-      return;
+      reject()
+      return
     }
-    usersCollection.findOne({username: username}).then(function (userDoc) {
+    usersCollection.findOne({username: username}).then(function(userDoc) {
       if (userDoc) {
-        userDoc = new User(userDoc, true);
+        userDoc = new User(userDoc, true)
         userDoc = {
           _id: userDoc.data._id,
           username: userDoc.data.username,
           avatar: userDoc.avatar
         }
-        resolve(userDoc);
+        resolve(userDoc)
       } else {
-        reject();
+        reject()
       }
-    }).catch(function () {
-      reject();
+    }).catch(function() {
+      reject()
     })
   })
 }
